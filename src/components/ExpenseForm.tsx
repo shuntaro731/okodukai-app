@@ -1,20 +1,26 @@
 import { useState } from 'react';
 import type { Category } from '../types';
+import { validateExpenseForm } from '../utils';
 
 type ExpenseFormProps = {
   categories: Category[];
-  onAddExpense: (amount: number, memo: string, category: string) => void;
+  onAddExpense: (amount: number, memo: string, category: string) => Promise<void>;
+  loading?: boolean;
+  onError?: (error: string) => void;
 };
 
-export default function ExpenseForm({ categories, onAddExpense }: ExpenseFormProps) {
+export default function ExpenseForm({ categories, onAddExpense, loading = false, onError }: ExpenseFormProps) {
   const [amount, setAmount] = useState<number>(0);
   const [memo, setMemo] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>('other');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount <= 0 || memo.trim() === "") {
-      console.log("処理が間違っています");
+    
+    const validation = validateExpenseForm(amount, memo);
+    if (!validation.isValid) {
+      const errorMessage = validation.errors.amount || validation.errors.memo || "入力エラーがあります。";
+      onError?.(errorMessage);
       return;
     }
     
@@ -71,10 +77,15 @@ export default function ExpenseForm({ categories, onAddExpense }: ExpenseFormPro
         </div>
         
         <button 
-          type='submit' 
-          className='w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600 transition-colors'
+          type='submit'
+          disabled={loading}
+          className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+            loading
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-purple-500 hover:bg-purple-600'
+          } text-white`}
         >
-          追加
+          {loading ? '追加中...' : '追加'}
         </button>
       </form>
     </div>

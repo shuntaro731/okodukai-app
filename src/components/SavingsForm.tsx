@@ -1,16 +1,23 @@
 import { useState } from 'react';
+import { validateSavingsForm } from '../utils';
 
 type SavingsFormProps = {
-  onAddSavings: (amount: number, memo: string) => void;
+  onAddSavings: (amount: number, memo: string) => Promise<void>;
+  loading?: boolean;
+  onError?: (error: string) => void;
 };
 
-export default function SavingsForm({ onAddSavings }: SavingsFormProps) {
+export default function SavingsForm({ onAddSavings, loading = false, onError }: SavingsFormProps) {
   const [savingsAmount, setSavingsAmount] = useState<number>(0);
   const [savingsMemo, setSavingsMemo] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (savingsAmount <= 0 || savingsMemo.trim() === "") {
+    
+    const validation = validateSavingsForm(savingsAmount, savingsMemo);
+    if (!validation.isValid) {
+      const errorMessage = validation.errors.amount || validation.errors.memo || "入力エラーがあります。";
+      onError?.(errorMessage);
       return;
     }
     
@@ -44,10 +51,15 @@ export default function SavingsForm({ onAddSavings }: SavingsFormProps) {
         </div>
         
         <button 
-          type='submit' 
-          className='w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors'
+          type='submit'
+          disabled={loading}
+          className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+            loading
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-green-500 hover:bg-green-600'
+          } text-white`}
         >
-          貯金を追加
+          {loading ? '追加中...' : '貯金を追加'}
         </button>
       </form>
     </div>

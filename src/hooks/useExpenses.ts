@@ -12,8 +12,18 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Expense, Savings, SavingsGoal } from '../types';
+import { 
+  filterExpensesByMonth, 
+  filterSavingsByMonth, 
+  getPreviousMonth, 
+  getMonthName,
+  calculateTotal,
+  calculatePreviousMonthComparison,
+  calculateCurrentSavings
+} from '../utils';
+import { MONTHLY_BUDGET } from '../constants/categories';
 
-export function useExpenses() {
+export function useExpenses(selectedMonth: string) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [savings, setSavings] = useState<Savings[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
@@ -152,18 +162,75 @@ export function useExpenses() {
     }
   };
 
+  // Monthly data calculations (simplified, no useMemo/useCallback)
+  const currentMonthExpenses = filterExpensesByMonth(expenses, selectedMonth);
+  const currentMonthSavings = filterSavingsByMonth(savings, selectedMonth);
+  
+  const totalExpenses = calculateTotal(currentMonthExpenses);
+  const totalSavings = calculateTotal(currentMonthSavings);
+  const currentSavings = calculateCurrentSavings(MONTHLY_BUDGET, totalExpenses);
+  
+  const previousMonth = getPreviousMonth(selectedMonth);
+  const previousMonthExpenses = filterExpensesByMonth(expenses, previousMonth);
+  const previousTotal = calculateTotal(previousMonthExpenses);
+  const previousMonthComparison = calculatePreviousMonthComparison(totalExpenses, previousTotal);
+  
+  // Chart data generation
+  const getChartData = () => {
+    const data = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthString = date.toISOString().slice(0, 7);
+      const monthExpenses = filterExpensesByMonth(expenses, monthString);
+      const monthSavings = filterSavingsByMonth(savings, monthString);
+      const expenseTotal = calculateTotal(monthExpenses);
+      const savingTotal = calculateTotal(monthSavings);
+
+      data.push({
+        month: getMonthName(monthString),
+        expenses: expenseTotal,
+        savings: savingTotal,
+      });
+    }
+    return data;
+  };
+
+  // Savings goal management
+  const currentSavingsGoal = savingsGoals.find((goal) => goal.month === selectedMonth);
+  
+  const handleSavingsGoalSubmit = async (targetAmount: number) => {
+    const existingGoal = currentSavingsGoal;
+    
+    await saveSavingsGoal(
+      selectedMonth,
+      targetAmount,
+      currentSavings,
+      existingGoal?.id
+    );
+  };
+
   return {
     expenses,
     savings,
-    savingsGoals,
     addExpense,
     deleteExpense,
     addSavings,
     deleteSavings,
-    saveSavingsGoal,
     error,
     setError,
     clearError: () => setError(""),
     loading,
+    // Monthly data
+    currentMonthExpenses,
+    currentMonthSavings,
+    totalExpenses,
+    totalSavings,
+    currentSavings,
+    previousMonthComparison,
+    getChartData,
+    // Savings goal data
+    currentSavingsGoal,
+    handleSavingsGoalSubmit,
   };
 }

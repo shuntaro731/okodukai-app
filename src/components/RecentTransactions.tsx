@@ -1,4 +1,5 @@
 import type { Category, Expense } from '../types';
+import { getCategoryInfo } from '../utils';
 
 type RecentTransactionsProps = {
   expenses: Expense[];
@@ -7,9 +8,6 @@ type RecentTransactionsProps = {
 };
 
 export default function RecentTransactions({ expenses, categories, onDeleteExpense }: RecentTransactionsProps) {
-  const getCategoryInfo = (categoryId: string = 'other') => {
-    return categories.find(cat => cat.id === categoryId) || categories.find(cat => cat.id === 'other')!;
-  };
 
   return (
     <div className='bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6'>
@@ -20,7 +18,7 @@ export default function RecentTransactions({ expenses, categories, onDeleteExpen
       
       <div className='space-y-3'>
         {expenses.slice(0, 3).map((expense) => {
-          const categoryInfo = getCategoryInfo(expense.category);
+          const categoryInfo = getCategoryInfo(expense.category || 'other', categories);
           return (
             <div key={expense.id} className='flex items-center justify-between'>
               <div className='flex items-center gap-3'>

@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app"
-import { getFirestore } from "firebase/firestore"
+import { getFirestore } from "firebase/firestore"  //firestoreを使えるようにimport
 
-const firebaseConfig = {
+const firebaseConfig = { //envファイルでapiキーは一括管理
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -11,11 +11,5 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const app = initializeApp(firebaseConfig)
-export const db = getFirestore(app)
-
-// Development: Enable Firestore emulator for local testing if needed
-// Uncomment the line below to use local emulator instead of production
-// if (location.hostname === 'localhost') {
-//   connectFirestoreEmulator(db, 'localhost', 8080)
-// }
+const app = initializeApp(firebaseConfig) //firebaseConfigのapiキーを使ってfirebaseに接続
+export const db = getFirestore(app) //firestoreをexport(dbという関数で他のファイルでもfirestoreを使えるように)

@@ -8,3 +8,7 @@ export const categories: Category[] = [
   { id: 'entertainment', name: 'エンタメ', icon: '🎬', color: 'bg-pink-500' },
   { id: 'other', name: 'その他', icon: '💰', color: 'bg-gray-500' },
 ];
+
+// Budget constants
+export const MONTHLY_BUDGET = 120000;
+export const DEFAULT_SAVINGS_TARGET = 15000;

@@ -1,28 +1,35 @@
 import { useState } from 'react';
 import type { SavingsGoal } from '../types';
+import { getMonthName, validateSavingsGoal } from '../utils';
+import { DEFAULT_SAVINGS_TARGET } from '../constants/categories';
 
 type SavingsCardProps = {
   selectedMonth: string;
   currentSavingsGoal?: SavingsGoal;
   currentSavings: number;
   onSavingsGoalSubmit: (targetAmount: number) => void;
+  loading?: boolean;
+  onError?: (error: string) => void;
 };
-
-function getMonthName(monthString: string) {
-  const date = new Date(monthString + '-01');
-  return `${date.getMonth() + 1}月`;
-}
 
 export default function SavingsCard({ 
   selectedMonth, 
   currentSavingsGoal, 
   currentSavings, 
-  onSavingsGoalSubmit 
+  onSavingsGoalSubmit,
+  loading = false,
+  onError
 }: SavingsCardProps) {
   const [showSavingsGoalModal, setShowSavingsGoalModal] = useState(false);
-  const [newSavingsTarget, setNewSavingsTarget] = useState(15000);
+  const [newSavingsTarget, setNewSavingsTarget] = useState(DEFAULT_SAVINGS_TARGET);
 
   const handleSubmit = () => {
+    const error = validateSavingsGoal(newSavingsTarget);
+    if (error) {
+      onError?.(error);
+      return;
+    }
+    
     onSavingsGoalSubmit(newSavingsTarget);
     setShowSavingsGoalModal(false);
   };
@@ -111,9 +118,14 @@ export default function SavingsCard({
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className='flex-1 bg-purple-500 text-white py-2 rounded-lg font-medium hover:bg-purple-600 transition-colors'
+                  disabled={loading}
+                  className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
+                    loading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-purple-500 hover:bg-purple-600'
+                  } text-white`}
                 >
-                  設定
+                  {loading ? '設定中...' : '設定'}
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import type { Category, Expense } from '../types';
+import { MONTHLY_BUDGET } from '../constants/categories';
 
 type CategorySpendingCardProps = {
   expenses: Expense[];
@@ -41,7 +42,7 @@ export default function CategorySpendingCard({ expenses, categories }: CategoryS
         {total.toLocaleString()}
         <span className='text-sm ml-1'>円</span>
       </div>
-      <div className='text-gray-400 text-sm mb-4'>/120,000</div>
+      <div className='text-gray-400 text-sm mb-4'>/{MONTHLY_BUDGET.toLocaleString()}</div>
       
       <div className='space-y-3'>
         {categoryTotals.slice(0, 3).map((categoryData) => {

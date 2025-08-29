@@ -1,29 +1,11 @@
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import type { Expense, Savings } from '../types';
+import { getMonthName, filterExpensesByMonth, filterSavingsByMonth, calculateTotal } from '../utils';
 
 type ExpenseChartProps = {
   expenses: Expense[];
   savings: Savings[];
 };
-
-function getMonthName(monthString: string) {
-  const date = new Date(monthString + '-01');
-  return `${date.getMonth() + 1}月`;
-}
-
-function getMonthExpenses(expenses: Expense[], monthFilter: string) {
-  return expenses.filter(expense => {
-    const expenseMonth = expense.createdAt.toDate().toISOString().slice(0, 7);
-    return expenseMonth === monthFilter;
-  });
-}
-
-function getMonthSavings(savings: Savings[], monthFilter: string) {
-  return savings.filter(saving => {
-    const savingMonth = saving.createdAt.toDate().toISOString().slice(0, 7);
-    return savingMonth === monthFilter;
-  });
-}
 
 export default function ExpenseChart({ expenses, savings }: ExpenseChartProps) {
   const getChartData = () => {
@@ -32,10 +14,10 @@ export default function ExpenseChart({ expenses, savings }: ExpenseChartProps) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const monthString = date.toISOString().slice(0, 7);
-      const monthExpenses = getMonthExpenses(expenses, monthString);
-      const monthSavings = getMonthSavings(savings, monthString);
-      const expenseTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      const savingTotal = monthSavings.reduce((sum, saving) => sum + saving.amount, 0);
+      const monthExpenses = filterExpensesByMonth(expenses, monthString);
+      const monthSavings = filterSavingsByMonth(savings, monthString);
+      const expenseTotal = calculateTotal(monthExpenses);
+      const savingTotal = calculateTotal(monthSavings);
       
       data.push({
         month: getMonthName(monthString),
