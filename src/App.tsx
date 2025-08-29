@@ -14,7 +14,6 @@ import {
     Timestamp,
 } from "firebase/firestore"
 
-
 type Expense = {
   id: string;
   amount: number;
