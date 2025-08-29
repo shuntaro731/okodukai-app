@@ -64,7 +64,7 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7))
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([])
   const [showSavingsGoalModal, setShowSavingsGoalModal] = useState<boolean>(false)
-  const [monthlyBudget, setMonthlyBudget] = useState<number>(120000)
+  const monthlyBudget = 120000
   const [newSavingsTarget, setNewSavingsTarget] = useState<number>(15000)
   const [savings, setSavings] = useState<Savings[]>([])
   const [savingsAmount, setSavingsAmount] = useState<number>(0)
