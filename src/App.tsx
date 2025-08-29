@@ -1,50 +1,8 @@
 import './App.css'
-import { useState } from 'react'
-import { useEffect } from 'react'
-import {db} from "./firebase"
+import { useState, useMemo, useCallback } from 'react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts'
-
-import {
-    collection,
-    addDoc,
-    onSnapshot,
-    deleteDoc,
-    doc,
-    query,
-    orderBy,
-    Timestamp,
-    updateDoc,
-} from "firebase/firestore"
-
-type Category = {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-}
-
-type Expense = {
-  id: string;
-  amount: number;
-  memo: string;
-  category?: string;
-  createdAt: Timestamp,
-}
-
-type SavingsGoal = {
-  id: string;
-  month: string; // YYYY-MM format
-  targetAmount: number;
-  currentAmount: number;
-  createdAt: Timestamp;
-}
-
-type Savings = {
-  id: string;
-  amount: number;
-  memo: string;
-  createdAt: Timestamp;
-}
+import type { Category } from './types'
+import { useExpenses } from './hooks/useExpenses'
 
 const categories: Category[] = [
   { id: 'food', name: '食品', icon: '🍽️', color: 'bg-green-500' },
@@ -56,149 +14,125 @@ const categories: Category[] = [
 ]
 
 function App() {
+  // Use the custom hook for Firebase operations
+  const {
+    expenses,
+    savings,
+    savingsGoals,
+    addExpense,
+    deleteExpense,
+    addSavings,
+    deleteSavings,
+    saveSavingsGoal,
+    error,
+    setError,
+    clearError,
+    loading,
+  } = useExpenses()
 
+  // Form state
   const [amount, setAmount] = useState<number>(0);
   const [memo, setMemo] = useState<string>("")
   const [selectedCategory, setSelectedCategory] = useState<string>('other')
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7))
-  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([])
-  const [showSavingsGoalModal, setShowSavingsGoalModal] = useState<boolean>(false)
-  const monthlyBudget = 120000
-  const [newSavingsTarget, setNewSavingsTarget] = useState<number>(15000)
-  const [savings, setSavings] = useState<Savings[]>([])
   const [savingsAmount, setSavingsAmount] = useState<number>(0)
   const [savingsMemo, setSavingsMemo] = useState<string>("")
+  
+  // UI state
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7))
+  const [showSavingsGoalModal, setShowSavingsGoalModal] = useState<boolean>(false)
+  const [newSavingsTarget, setNewSavingsTarget] = useState<number>(15000)
+  
+  // Constants
+  const monthlyBudget = 120000
 
-  useEffect(() => {
-    const q = query(collection(db, "expenses"), orderBy("createdAt", "desc"))
-    const unsubscirbe = onSnapshot(q, (snapshot)=>{
-      const data = snapshot.docs.map((docSnap)=> {
-        console.log("id", docSnap.id)
-        return{
-          id:docSnap.id,
-          ...docSnap.data()
-        }
-      })as Expense[]
-      setExpenses(data)
-    })
-    return () => unsubscirbe()
-  }, [])
-
-  // Savings goals subscription
-  useEffect(() => {
-    const q = query(collection(db, "savingsGoals"), orderBy("createdAt", "desc"))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as SavingsGoal[]
-      setSavingsGoals(data)
-    })
-    return () => unsubscribe()
-  }, [])
-
-  // Savings subscription
-  useEffect(() => {
-    const q = query(collection(db, "savings"), orderBy("createdAt", "desc"))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as Savings[]
-      setSavings(data)
-    })
-    return () => unsubscribe()
-  }, [])
 const handleSubmit = async (e: React.FormEvent) => {
-  console.log("submit")
-  console.log(amount)
-  console.log(memo)
-  e. preventDefault()
-  if (amount <= 0 || memo.trim() === "") {
-    console.log("処理が間違っています")
+  e.preventDefault()
+  clearError()
+  
+  if (amount <= 0) {
+    setError("金額は0円より多く入力してください。")
     return
   }
-  try {
-    await addDoc(collection(db, "expenses"), {
-      amount,
-      memo,
-      category: selectedCategory,
-      createdAt: Timestamp.now(),
-    })
-    setAmount(0)
-    setMemo("")
-    setSelectedCategory('other')
-    console.log("Expense added successfully")
-  } catch (error) {
-    console.error("Error adding expense:", error)
+  if (memo.trim() === "") {
+    setError("メモを入力してください。")
+    return
   }
+  
+  await addExpense(amount, memo, selectedCategory)
+  setAmount(0)
+  setMemo("")
+  setSelectedCategory('other')
 }
 
 const handleDelete = async (id: string) => {
-  console.log("id", id)
-  try {
-    await deleteDoc(doc(db, "expenses",id))
-    console.log("Expense deleted successfully")
-  } catch (error) {
-    console.error("Error deleting expense:", error)
-  }
+  await deleteExpense(id)
 }
 
 const handleSavingsSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
-  if (savingsAmount <= 0 || savingsMemo.trim() === "") {
+  clearError()
+  
+  if (savingsAmount <= 0) {
+    setError("貯金額は0円より多く入力してください。")
     return
   }
-  try {
-    await addDoc(collection(db, "savings"), {
-      amount: savingsAmount,
-      memo: savingsMemo,
-      createdAt: Timestamp.now(),
-    })
-    setSavingsAmount(0)
-    setSavingsMemo("")
-    console.log("Savings added successfully")
-  } catch (error) {
-    console.error("Error adding savings:", error)
+  if (savingsMemo.trim() === "") {
+    setError("メモを入力してください。")
+    return
   }
+  
+  await addSavings(savingsAmount, savingsMemo)
+  setSavingsAmount(0)
+  setSavingsMemo("")
 }
 
 const handleSavingsDelete = async (id: string) => {
-  try {
-    await deleteDoc(doc(db, "savings", id))
-    console.log("Savings deleted successfully")
-  } catch (error) {
-    console.error("Error deleting savings:", error)
-  }
+  await deleteSavings(id)
 }
 
-// Filter expenses by selected month
-const getMonthExpenses = (monthFilter: string) => {
+// Memoized expensive calculations
+const currentMonthExpenses = useMemo(() => {
+  return expenses.filter(expense => {
+    const expenseMonth = expense.createdAt.toDate().toISOString().slice(0, 7)
+    return expenseMonth === selectedMonth
+  })
+}, [expenses, selectedMonth])
+
+const currentMonthSavings = useMemo(() => {
+  return savings.filter(saving => {
+    const savingMonth = saving.createdAt.toDate().toISOString().slice(0, 7)
+    return savingMonth === selectedMonth
+  })
+}, [savings, selectedMonth])
+
+const total = useMemo(() => {
+  return currentMonthExpenses.reduce((sum, item) => sum + item.amount, 0)
+}, [currentMonthExpenses])
+
+const savingsTotal = useMemo(() => {
+  return currentMonthSavings.reduce((sum, item) => sum + item.amount, 0)
+}, [currentMonthSavings])
+
+// Helper functions for reusability
+const getMonthExpenses = useCallback((monthFilter: string) => {
   return expenses.filter(expense => {
     const expenseMonth = expense.createdAt.toDate().toISOString().slice(0, 7)
     return expenseMonth === monthFilter
   })
-}
+}, [expenses])
 
-// Filter savings by selected month
-const getMonthSavings = (monthFilter: string) => {
+const getMonthSavings = useCallback((monthFilter: string) => {
   return savings.filter(saving => {
     const savingMonth = saving.createdAt.toDate().toISOString().slice(0, 7)
     return savingMonth === monthFilter
   })
-}
-
-const currentMonthExpenses = getMonthExpenses(selectedMonth)
-const currentMonthSavings = getMonthSavings(selectedMonth)
-const total = currentMonthExpenses.reduce((sum, item) => sum + item.amount, 0)
-const savingsTotal = currentMonthSavings.reduce((sum, item) => sum + item.amount, 0)
+}, [savings])
 
 const getCategoryInfo = (categoryId: string = 'other') => {
   return categories.find(cat => cat.id === categoryId) || categories.find(cat => cat.id === 'other')!
 }
 
-const getCategoryTotals = () => {
+const getCategoryTotals = useMemo(() => {
   const totals = categories.map(category => {
     const categoryExpenses = currentMonthExpenses.filter(expense => expense.category === category.id)
     const total = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0)
@@ -210,7 +144,7 @@ const getCategoryTotals = () => {
   }).filter(cat => cat.total > 0)
   
   return totals.sort((a, b) => b.total - a.total)
-}
+}, [currentMonthExpenses])
 
 const getMonthName = (monthString: string) => {
   const date = new Date(monthString + '-01')
@@ -218,17 +152,17 @@ const getMonthName = (monthString: string) => {
 }
 
 // Get or create savings goal for the selected month
-const getCurrentSavingsGoal = () => {
+const getCurrentSavingsGoal = useMemo(() => {
   return savingsGoals.find(goal => goal.month === selectedMonth)
-}
+}, [savingsGoals, selectedMonth])
 
 // Calculate current month savings (budget - expenses)
-const calculateCurrentSavings = () => {
+const calculateCurrentSavings = useMemo(() => {
   return Math.max(0, monthlyBudget - total)
-}
+}, [monthlyBudget, total])
 
 // Calculate previous month comparison
-const getPreviousMonthComparison = () => {
+const getPreviousMonthComparison = useMemo(() => {
   const currentDate = new Date(selectedMonth + '-01')
   const previousDate = new Date(currentDate)
   previousDate.setMonth(previousDate.getMonth() - 1)
@@ -243,39 +177,26 @@ const getPreviousMonthComparison = () => {
     difference,
     percentage: previousTotal > 0 ? Math.round((difference / previousTotal) * 100) : 0
   }
-}
+}, [selectedMonth, getMonthExpenses, total])
 
 // Handle savings goal creation/update
 const handleSavingsGoalSubmit = async (targetAmount: number) => {
-  const existingGoal = getCurrentSavingsGoal()
-  const currentSavings = calculateCurrentSavings()
+  clearError()
   
-  try {
-    if (existingGoal) {
-      // Update existing goal
-      await updateDoc(doc(db, "savingsGoals", existingGoal.id), {
-        targetAmount,
-        currentAmount: currentSavings,
-      })
-      console.log("Savings goal updated successfully")
-    } else {
-      // Create new goal
-      await addDoc(collection(db, "savingsGoals"), {
-        month: selectedMonth,
-        targetAmount,
-        currentAmount: currentSavings,
-        createdAt: Timestamp.now(),
-      })
-      console.log("Savings goal created successfully")
-    }
-    setShowSavingsGoalModal(false)
-  } catch (error) {
-    console.error("Error with savings goal:", error)
+  if (targetAmount <= 0) {
+    setError("目標金額は0円より多く入力してください。")
+    return
   }
+  
+  const existingGoal = getCurrentSavingsGoal
+  const currentSavings = calculateCurrentSavings
+  
+  await saveSavingsGoal(selectedMonth, targetAmount, currentSavings, existingGoal?.id)
+  setShowSavingsGoalModal(false)
 }
 
 // Generate chart data for the last 6 months
-const getChartData = () => {
+const getChartData = useMemo(() => {
   const data = []
   for (let i = 5; i >= 0; i--) {
     const date = new Date()
@@ -293,12 +214,24 @@ const getChartData = () => {
     })
   }
   return data
-}
+}, [getMonthExpenses, getMonthSavings])
 
 
 return (
   <div className='min-h-screen bg-gray-50 p-4'>
     <div className='w-full max-w-md mx-auto'>
+      {/* Error message */}
+      {error && (
+        <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative'>
+          <span className='block sm:inline'>{error}</span>
+          <button
+            onClick={clearError}
+            className='absolute top-0 bottom-0 right-0 px-4 py-3'
+          >
+            <span className='text-red-500 text-xl'>×</span>
+          </button>
+        </div>
+      )}
       {/* Header section with month selector and total */}
       <div className='text-center mb-6'>
         <div className='flex items-center justify-center gap-2 mb-4'>
@@ -337,7 +270,7 @@ return (
           <span className='text-2xl ml-1'>円</span>
         </div>
         <div className='text-gray-500 text-sm'>
-          先月比: {getPreviousMonthComparison().difference > 0 ? '+' : ''}{getPreviousMonthComparison().difference.toLocaleString()} 円
+          先月比: {getPreviousMonthComparison.difference > 0 ? '+' : ''}{getPreviousMonthComparison.difference.toLocaleString()} 円
         </div>
       </div>
 
@@ -356,7 +289,7 @@ return (
         </div>
         <div className='h-24'>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={getChartData()}>
+            <LineChart data={getChartData}>
               <XAxis 
                 dataKey="month" 
                 axisLine={false} 
@@ -386,7 +319,7 @@ return (
       </div>
 
       {/* Category spending card */}
-      {getCategoryTotals().length > 0 && (
+      {getCategoryTotals.length > 0 && (
         <div className='bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6'>
           <div className='flex items-center justify-between mb-4'>
             <h2 className='text-gray-500 text-sm font-semibold'>カテゴリごとの支出</h2>
@@ -402,7 +335,7 @@ return (
           <div className='text-gray-400 text-sm mb-4'>/120,000</div>
           
           <div className='space-y-3'>
-            {getCategoryTotals().slice(0, 3).map((categoryData) => {
+            {getCategoryTotals.slice(0, 3).map((categoryData) => {
               const percentage = Math.min((categoryData.total / total) * 100, 100)
               return (
                 <div key={categoryData.id} className='flex items-center gap-3'>
@@ -437,14 +370,14 @@ return (
         </div>
         
         <div className='text-xl font-bold text-purple-500 mb-1'>
-          {calculateCurrentSavings().toLocaleString()}
+          {calculateCurrentSavings.toLocaleString()}
           <span className='text-sm ml-1'>円</span>
         </div>
         
-        {getCurrentSavingsGoal() ? (
+        {getCurrentSavingsGoal ? (
           <>
             <div className='text-gray-400 text-xs mb-4'>
-              目標金額 : {getCurrentSavingsGoal()?.targetAmount.toLocaleString()}
+              目標金額 : {getCurrentSavingsGoal?.targetAmount.toLocaleString()}
             </div>
             
             {/* Progress bar */}
@@ -453,11 +386,11 @@ return (
                 <div 
                   className='bg-purple-600 absolute left-0 top-0 h-full transition-all duration-500'
                   style={{ 
-                    width: `${Math.min((calculateCurrentSavings() / (getCurrentSavingsGoal()?.targetAmount || 1)) * 100, 100)}%` 
+                    width: `${Math.min((calculateCurrentSavings / (getCurrentSavingsGoal?.targetAmount || 1)) * 100, 100)}%` 
                   }}
                 ></div>
                 <span className='text-white text-xs font-medium relative z-10'>
-                  {Math.round((calculateCurrentSavings() / (getCurrentSavingsGoal()?.targetAmount || 1)) * 100)}%
+                  {Math.round((calculateCurrentSavings / (getCurrentSavingsGoal?.targetAmount || 1)) * 100)}%
                 </span>
               </div>
             </div>
@@ -604,9 +537,14 @@ return (
           
           <button 
             type='submit' 
-            className='w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600 transition-colors'
+            disabled={loading}
+            className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+              loading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-purple-500 hover:bg-purple-600'
+            } text-white`}
           >
-            追加
+            {loading ? '追加中...' : '追加'}
           </button>
         </form>
       </div>
@@ -637,9 +575,14 @@ return (
           
           <button 
             type='submit' 
-            className='w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors'
+            disabled={loading}
+            className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+              loading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-green-500 hover:bg-green-600'
+            } text-white`}
           >
-            貯金を追加
+            {loading ? '追加中...' : '貯金を追加'}
           </button>
         </form>
       </div>
@@ -664,7 +607,7 @@ return (
                 />
               </div>
               <div className='text-sm text-gray-500'>
-                現在の貯金可能額: {calculateCurrentSavings().toLocaleString()}円
+                現在の貯金可能額: {calculateCurrentSavings.toLocaleString()}円
               </div>
               <div className='flex gap-3'>
                 <button
@@ -675,9 +618,14 @@ return (
                 </button>
                 <button
                   onClick={() => handleSavingsGoalSubmit(newSavingsTarget)}
-                  className='flex-1 bg-purple-500 text-white py-2 rounded-lg font-medium hover:bg-purple-600 transition-colors'
+                  disabled={loading}
+                  className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
+                    loading 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-500 hover:bg-purple-600'
+                  } text-white`}
                 >
-                  設定
+                  {loading ? '設定中...' : '設定'}
                 </button>
               </div>
             </div>
