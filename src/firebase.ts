@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app"
-import { getFirestore } from "firebase/firestore"
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore"
 
 const firebaseConfig = {
     apiKey: "AIzaSyBP2zdPMJskUZ1LaZ5gIKJCFfTqtT4Qnds",
@@ -13,3 +13,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
+
+// Development: Enable Firestore emulator for local testing if needed
+// Uncomment the line below to use local emulator instead of production
+// if (location.hostname === 'localhost') {
+//   connectFirestoreEmulator(db, 'localhost', 8080)
+// }
