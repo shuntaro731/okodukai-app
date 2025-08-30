@@ -1,5 +1,6 @@
 import type { Category, Expense } from '../types';
 import { MONTHLY_BUDGET } from '../constants/categories';
+import { calculateTotal, getCategoryTotals } from '../utils';
 
 type CategorySpendingCardProps = {
   expenses: Expense[];
@@ -7,23 +8,9 @@ type CategorySpendingCardProps = {
 };
 
 export default function CategorySpendingCard({ expenses, categories }: CategorySpendingCardProps) {
-  const total = expenses.reduce((sum, item) => sum + item.amount, 0);
+  const total = calculateTotal(expenses);
 
-  const getCategoryTotals = () => {
-    const totals = categories.map(category => {
-      const categoryExpenses = expenses.filter(expense => expense.category === category.id);
-      const categoryTotal = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      return {
-        ...category,
-        total: categoryTotal,
-        count: categoryExpenses.length
-      };
-    }).filter(cat => cat.total > 0);
-    
-    return totals.sort((a, b) => b.total - a.total);
-  };
-
-  const categoryTotals = getCategoryTotals();
+  const categoryTotals = getCategoryTotals(expenses, categories);
 
   if (categoryTotals.length === 0) {
     return null;

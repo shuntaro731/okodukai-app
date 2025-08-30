@@ -3,16 +3,15 @@ import ExpenseForm from './ExpenseForm';
 import SavingsForm from './SavingsForm';
 import type { Category } from '../../types';
 
-type ModalType = 'selection' | 'expense' | 'savings';
+type ModalType = 'selection' | 'expense' | 'savings'; //支出か貯金を選択
 
 type AddModalProps = {
-  isOpen: boolean;
+  isOpen: boolean; //モーダルの開閉状況
   onClose: () => void;
   categories: Category[];
-  onAddExpense: (amount: number, memo: string, category: string) => Promise<void>;
-  onAddSavings: (amount: number, memo: string) => Promise<void>;
+  onAddExpense: (amount: number, memo: string, category: string) => Promise<void>; //支出追加データを親に渡す
+  onAddSavings: (amount: number, memo: string) => Promise<void>; //略
   loading?: boolean;
-  onError?: (error: string) => void;
 };
 
 export default function AddModal({
@@ -21,27 +20,26 @@ export default function AddModal({
   categories,
   onAddExpense,
   onAddSavings,
-  loading = false,
-  onError
+  loading = false
 }: AddModalProps) {
   const [modalType, setModalType] = useState<ModalType>('selection');
 
   const handleClose = () => {
-    setModalType('selection');
-    onClose();
+    setModalType('selection'); //selection画面
+    onClose(); //完了後閉じる
   };
 
   const handleExpenseAdded = async (amount: number, memo: string, category: string) => {
-    await onAddExpense(amount, memo, category);
+    await onAddExpense(amount, memo, category); //支出画面
     handleClose();
   };
 
-  const handleSavingsAdded = async (amount: number, memo: string) => {
-    await onAddSavings(amount, memo);
+  const handleSavingsAdded = async (amount: number, memo: string) => { 
+    await onAddSavings(amount, memo); //貯金画面
     handleClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) return null; //
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -88,24 +86,22 @@ export default function AddModal({
             </div>
           )}
 
-          {modalType === 'expense' && (
+          {modalType === 'expense' && ( //新しい支出を追加
             <ExpenseForm
               categories={categories}
               onAddExpense={handleExpenseAdded}
               loading={loading}
-              onError={onError}
             />
           )}
 
-          {modalType === 'savings' && (
+          {modalType === 'savings' && ( //貯金を追加
             <SavingsForm
               onAddSavings={handleSavingsAdded}
               loading={loading}
-              onError={onError}
             />
           )}
 
-          {modalType !== 'selection' && (
+          {modalType !== 'selection' && ( //選択画面に戻る
             <button
               onClick={() => setModalType('selection')}
               className="w-full mt-3 py-2 text-gray-600 hover:text-gray-800 text-sm transition-colors"

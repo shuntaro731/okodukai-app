@@ -13,12 +13,13 @@ export default function RecentSavings({ savings, savingsTotal, onDeleteSavings }
         <h2 className='text-green-600 text-sm font-semibold'>💰 最近の貯金履歴</h2>
         <div className='text-green-600 text-xs font-semibold'>
           合計: +{savingsTotal.toLocaleString()}円
+          {/* utilsで合計割り出し */}
         </div>
       </div>
       
-      {savings.length > 0 ? (
+      {savings.length > 0 ? ( //0より多いならば
         <div className='space-y-3'>
-          {savings.slice(0, 3).map((saving) => (
+          {savings.slice(0, 3).map((saving) => ( //最新の3件の貯金項目をリスト表示
             <div key={saving.id} className='flex items-center justify-between'>
               <div className='flex items-center gap-3'>
                 <div className='w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center'>
@@ -42,6 +43,7 @@ export default function RecentSavings({ savings, savingsTotal, onDeleteSavings }
           ))}
         </div>
       ) : (
+        //貯金がない場合
         <div className='text-gray-400 text-sm text-center py-4'>
           まだ貯金の記録がありません
         </div>

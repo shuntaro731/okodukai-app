@@ -1,28 +1,18 @@
 import { useState } from 'react';
-import { validateSavingsForm } from '../../utils';
 
 type SavingsFormProps = {
   onAddSavings: (amount: number, memo: string) => Promise<void>;
   loading?: boolean;
-  onError?: (error: string) => void;
 };
 
-export default function SavingsForm({ onAddSavings, loading = false, onError }: SavingsFormProps) {
-  const [savingsAmount, setSavingsAmount] = useState<number>(0);
-  const [savingsMemo, setSavingsMemo] = useState<string>("");
+export default function SavingsForm({ onAddSavings, loading = false }: SavingsFormProps) {
+  const [savingsAmount, setSavingsAmount] = useState<number>(0); //貯金額の入力値を保持
+  const [savingsMemo, setSavingsMemo] = useState<string>(""); //メモの入力値を保持
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const validation = validateSavingsForm(savingsAmount, savingsMemo);
-    if (!validation.isValid) {
-      const errorMessage = validation.errors.amount || validation.errors.memo || "入力エラーがあります。";
-      onError?.(errorMessage);
-      return;
-    }
-    
-    await onAddSavings(savingsAmount, savingsMemo);
-    setSavingsAmount(0);
+    e.preventDefault(); //contactformでもやったブラウザのデフォルトのフォーム送信動作を防ぐやつ
+    await onAddSavings(savingsAmount, savingsMemo); //親コンポーネントにデータを渡す
+    setSavingsAmount(0); //フォームリセット
     setSavingsMemo("");
   };
 

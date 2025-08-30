@@ -2,9 +2,9 @@ import type { Category, Expense } from '../types';
 import { getCategoryInfo } from '../utils';
 
 type RecentTransactionsProps = {
-  expenses: Expense[];
-  categories: Category[];
-  onDeleteExpense: (id: string) => void;
+  expenses: Expense[]; //支出データ
+  categories: Category[]; //カテゴリ定義リスト
+  onDeleteExpense: (id: string) => void; //voidなのでデータを空にする 削除
 };
 
 export default function RecentTransactions({ expenses, categories, onDeleteExpense }: RecentTransactionsProps) {
@@ -17,12 +17,13 @@ export default function RecentTransactions({ expenses, categories, onDeleteExpen
       </div>
       
       <div className='space-y-3'>
-        {expenses.slice(0, 3).map((expense) => {
+        {expenses.slice(0, 3).map((expense) => { //最新の3件のみを表示。
           const categoryInfo = getCategoryInfo(expense.category || 'other', categories);
           return (
             <div key={expense.id} className='flex items-center justify-between'>
               <div className='flex items-center gap-3'>
                 <div className={`w-9 h-9 ${categoryInfo.color} bg-opacity-20 rounded-lg flex items-center justify-center`}>
+                  {/* 定数で定義したカテゴリごとのカラー */}
                   <span className='text-lg'>{categoryInfo.icon}</span>
                 </div>
                 <div>

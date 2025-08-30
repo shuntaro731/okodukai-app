@@ -1,5 +1,5 @@
+//定数管理
 import type { Category } from '../types';
-
 export const categories: Category[] = [
   { id: 'food', name: '食品', icon: '🍽️', color: 'bg-green-500' },
   { id: 'dining', name: '外食', icon: '🍕', color: 'bg-blue-500' },
@@ -9,6 +9,5 @@ export const categories: Category[] = [
   { id: 'other', name: 'その他', icon: '💰', color: 'bg-gray-500' },
 ];
 
-// Budget constants
-export const MONTHLY_BUDGET = 120000;
+export const MONTHLY_BUDGET = 200000;
 export const DEFAULT_SAVINGS_TARGET = 15000;

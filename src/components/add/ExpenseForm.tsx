@@ -1,28 +1,19 @@
 import { useState } from 'react';
 import type { Category } from '../../types';
-import { validateExpenseForm } from '../../utils';
 
 type ExpenseFormProps = {
   categories: Category[];
   onAddExpense: (amount: number, memo: string, category: string) => Promise<void>;
   loading?: boolean;
-  onError?: (error: string) => void;
 };
 
-export default function ExpenseForm({ categories, onAddExpense, loading = false, onError }: ExpenseFormProps) {
+export default function ExpenseForm({ categories, onAddExpense, loading = false }: ExpenseFormProps) {
   const [amount, setAmount] = useState<number>(0);
   const [memo, setMemo] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>('other');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validation = validateExpenseForm(amount, memo);
-    if (!validation.isValid) {
-      const errorMessage = validation.errors.amount || validation.errors.memo || "入力エラーがあります。";
-      onError?.(errorMessage);
-      return;
-    }
     
     await onAddExpense(amount, memo, selectedCategory);
     setAmount(0);

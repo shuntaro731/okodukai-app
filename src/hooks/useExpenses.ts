@@ -1,3 +1,4 @@
+//カスタムフック => 様々な状態管理などをReact のフックを使って再利用可能に
 import { useState, useEffect } from 'react';
 import {
   collection,
@@ -9,41 +10,39 @@ import {
   orderBy,
   Timestamp,
   updateDoc,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import type { Expense, Savings, SavingsGoal } from '../types';
+} from "firebase/firestore"; //Firestoreデータベースを操作するための関数群(多分気にしなくてもいい？)
+import { db } from "../firebase";  //firestoreeにアクセス
+
+import type { Expense, Savings, SavingsGoal } from '../types'; //typesから型をインポート
 import {
   filterExpensesByMonth,
   filterSavingsByMonth,
   getPreviousMonth,
   getMonthName,
   calculateTotal,
-  calculatePreviousMonthComparison,
-  calculateCurrentSavings
-} from '../utils';
-import { MONTHLY_BUDGET } from '../constants/categories';
+  calculatePreviousMonthComparison
+} from '../utils';  //utitlsからデータ処理に関する関数をインポート
 
 export function useExpenses(selectedMonth: string) {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]); //Firestoreのexpensesコレクションから取得した全ての支出データを保持する変数です。初期値は空の配列。
   const [savings, setSavings] = useState<Savings[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false); //追加、削除、更新などのデータ操作が進行中であるかを示す(ローディング)真偽値の状態変数です。初期値は false
 
-  // Expenses subscription
+
   useEffect(() => {
-    const q = query(collection(db, "expenses"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const q = query(collection(db, "expenses"), orderBy("createdAt", "desc")); //expensesからデータが登録されると「createdAt」が新しい順に並べる
+    const unsubscribe = onSnapshot(q, (snapshot) => {  //データベースの変化をリアルタイムで取得
       const data = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as Expense[];
-      setExpenses(data);
+        id: docSnap.id, //ドキュメントid
+        ...docSnap.data() //その他でータ
+      })) as Expense[]; //index.tsで定義したデータに整える
+      setExpenses(data); //setExpensesに保持
     });
-    return () => unsubscribe();
-  }, []);
+    return () => unsubscribe(); // アプリが終わるときは処理をやめる
+  }, []); //空の配列なので初回レンダー時にも一度だけこの処理を始める
 
-  // Savings subscription
+
   useEffect(() => {
     const q = query(collection(db, "savings"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -56,7 +55,6 @@ export function useExpenses(selectedMonth: string) {
     return () => unsubscribe();
   }, []);
 
-  // Savings goals subscription
   useEffect(() => {
     const q = query(collection(db, "savingsGoals"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -69,118 +67,84 @@ export function useExpenses(selectedMonth: string) {
     return () => unsubscribe();
   }, []);
 
-  // Add expense
+
+  // 支出を追加する
   const addExpense = async (amount: number, memo: string, category: string) => {
-    try {
-      setError("")
-      setLoading(true)
-      await addDoc(collection(db, "expenses"), {
-        amount,
-        memo,
-        category,
-        createdAt: Timestamp.now(),
-      });
-    } catch (error) {
-      setError("支出の追加に失敗しました。もう一度お試しください。")
-      console.error("Error adding expense:", error);
-    } finally {
-      setLoading(false)
-    }
+    setLoading(true) //ローディングが始まる
+    await addDoc(collection(db, "expenses"), { //expensesにデータを追加
+      amount,
+      memo,
+      category,
+      createdAt: Timestamp.now(),
+    });
+    setLoading(false) //ローディングを終わらせる
   };
 
-  // Delete expense
+  //支出を削除する
   const deleteExpense = async (id: string) => {
-    try {
-      setError("")
-      setLoading(true)
-      await deleteDoc(doc(db, "expenses", id));
-    } catch (error) {
-      setError("支出の削除に失敗しました。もう一度お試しください。")
-      console.error("Error deleting expense:", error);
-    } finally {
-      setLoading(false)
-    }
+    setLoading(true)
+    await deleteDoc(doc(db, "expenses", id)); //db内の指定されたIDの支出データを削除
+    setLoading(false)
   };
 
-  // Add savings
+  //支出を追加すると同じ処理
   const addSavings = async (amount: number, memo: string) => {
-    try {
-      setError("")
-      setLoading(true)
-      await addDoc(collection(db, "savings"), {
-        amount,
-        memo,
+    setLoading(true)
+    await addDoc(collection(db, "savings"), {
+      amount,
+      memo,
+      createdAt: Timestamp.now(),
+    });
+    setLoading(false)
+  };
+
+  //支出を削除すると同じ処理
+  const deleteSavings = async (id: string) => {
+    setLoading(true)
+    await deleteDoc(doc(db, "savings", id));
+    setLoading(false)
+  };
+
+  // 貯金目標を作成・更新する //existingGoalId?: 既存のドキュメントのID。。
+  const savingGoal = async (month: string, targetAmount: number, currentAmount: number, existingGoalId?: string) => {
+    setLoading(true)
+    if (existingGoalId) { //existingGoalIdもしあるなら
+      await updateDoc(doc(db, "savingsGoals", existingGoalId), { //目標額をアップデート
+        targetAmount,
+        currentAmount,
+      });
+    } else { //もしないなら
+      await addDoc(collection(db, "savingsGoals"), { //新規作成
+        month,
+        targetAmount,
+        currentAmount,
         createdAt: Timestamp.now(),
       });
-    } catch (error) {
-      setError("貯金の追加に失敗しました。もう一度お試しください。")
-      console.error("Error adding savings:", error);
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
   };
 
-  // Delete savings
-  const deleteSavings = async (id: string) => {
-    try {
-      setError("")
-      setLoading(true)
-      await deleteDoc(doc(db, "savings", id));
-    } catch (error) {
-      setError("貯金の削除に失敗しました。もう一度お試しください。")
-      console.error("Error deleting savings:", error);
-    } finally {
-      setLoading(false)
-    }
-  };
+  //utilsの関数を使ってフィルタリングおよびデータ処理
+  const currentMonthExpenses = filterExpensesByMonth(expenses, selectedMonth); //今月（selectedMonth）の支出だけを絞り込む
+  const currentMonthSavings = filterSavingsByMonth(savings, selectedMonth); //今月（selectedMonth）の支出だけを絞り込む
 
-  // Handle savings goal creation/update
-  const saveSavingsGoal = async (month: string, targetAmount: number, currentAmount: number, existingGoalId?: string) => {
-    try {
-      setError("")
-      setLoading(true)
-      if (existingGoalId) {
-        // Update existing goal
-        await updateDoc(doc(db, "savingsGoals", existingGoalId), {
-          targetAmount,
-          currentAmount,
-        });
-      } else {
-        // Create new goal
-        await addDoc(collection(db, "savingsGoals"), {
-          month,
-          targetAmount,
-          currentAmount,
-          createdAt: Timestamp.now(),
-        });
-      }
-    } catch (error) {
-      setError("貯金目標の保存に失敗しました。もう一度お試しください。")
-      console.error("Error with savings goal:", error);
-    } finally {
-      setLoading(false)
-    }
-  };
+  const totalExpenses = calculateTotal(currentMonthExpenses); //今月の総支出額を計算
+  const totalSavings = calculateTotal(currentMonthSavings);  // 今月の総貯金額を計算
+  const currentSavings = totalSavings; 
 
-  // Monthly data calculations (simplified, no useMemo/useCallback)
-  const currentMonthExpenses = filterExpensesByMonth(expenses, selectedMonth);
-  const currentMonthSavings = filterSavingsByMonth(savings, selectedMonth);
-  
-  const totalExpenses = calculateTotal(currentMonthExpenses);
-  const totalSavings = calculateTotal(currentMonthSavings);
-  const currentSavings = calculateCurrentSavings(MONTHLY_BUDGET, totalExpenses);
-  
-  const previousMonth = getPreviousMonth(selectedMonth);
-  const previousMonthExpenses = filterExpensesByMonth(expenses, previousMonth);
-  const previousTotal = calculateTotal(previousMonthExpenses);
-  const previousMonthComparison = calculatePreviousMonthComparison(totalExpenses, previousTotal);
-  
-  // Chart data generation
+  const previousMonth = getPreviousMonth(selectedMonth); // 先月が何月かを計算
+  const previousMonthExpenses = filterExpensesByMonth(expenses, previousMonth); // 先月の支出だけを絞り込む
+  const previousTotal = calculateTotal(previousMonthExpenses);  // 先月の総支出額を計算
+  const previousMonthComparison = calculatePreviousMonthComparison(totalExpenses, previousTotal); // 今月の支出と先月の支出を比較する
+
+  //チャート
   const getChartData = () => {
-    const data = [];
-    for (let i = 5; i >= 0; i--) {
+    const data = []; //最終的にpush
+    for (let i = 5; i >= 0; i--) { //new Date()(現在の日時)を基準にiヶ月前のデータ作る。2025年8月 i=5 → 2025年3月 i=4 → 2025年4月
       const date = new Date();
       date.setMonth(date.getMonth() - i);
+
+      // 各月の支出・貯金を絞り込み、合計を計算
       const monthString = date.toISOString().slice(0, 7);
       const monthExpenses = filterExpensesByMonth(expenses, monthString);
       const monthSavings = filterSavingsByMonth(savings, monthString);
@@ -188,38 +152,34 @@ export function useExpenses(selectedMonth: string) {
       const savingTotal = calculateTotal(monthSavings);
 
       data.push({
-        month: getMonthName(monthString),
-        expenses: expenseTotal,
-        savings: savingTotal,
+        month: getMonthName(monthString), //getMonthNameで月表示に整形してdateにpush
+        expenses: expenseTotal, //その月の支出合計
+        savings: savingTotal, //その月の貯金合計
       });
     }
     return data;
   };
 
-  // Savings goal management
+  // 今月（selectedMonth）の貯金目標を見つける
   const currentSavingsGoal = savingsGoals.find((goal) => goal.month === selectedMonth);
-  
-  const handleSavingsGoalSubmit = async (targetAmount: number) => {
+
+  const handleSavingsGoalSubmit = async (targetAmount: number) => { //ユーザーが貯金目標の金額を入力した時
     const existingGoal = currentSavingsGoal;
-    
-    await saveSavingsGoal(
+    await savingGoal( //以前の関数を使う
       selectedMonth,
       targetAmount,
-      currentSavings,
-      existingGoal?.id
+      0,
+      existingGoal?.id // 既存目標があればそのIDを渡す
     );
   };
 
-  return {
+  return { //カスタムフックをApp.tsxなどに渡す
     expenses,
     savings,
     addExpense,
     deleteExpense,
     addSavings,
     deleteSavings,
-    error,
-    setError,
-    clearError: () => setError(""),
     loading,
     // Monthly data
     currentMonthExpenses,

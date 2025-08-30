@@ -1,118 +1,119 @@
-import { useState } from 'react';
-import type { SavingsGoal } from '../types';
-import { getMonthName, validateSavingsGoal } from '../utils';
-import { DEFAULT_SAVINGS_TARGET } from '../constants/categories';
+import { useState } from "react";
+import type { SavingsGoal } from "../types";
+import { getMonthName } from "../utils";
+import { DEFAULT_SAVINGS_TARGET } from "../constants/categories";
 
 type SavingsCardProps = {
-  selectedMonth: string;
-  currentSavingsGoal?: SavingsGoal;
-  currentSavings: number;
+  //プロップスの受け取り
+  selectedMonth: string; //対象の月
+  currentSavingsGoal?: SavingsGoal; //現在の貯金目標（存在する場合）
+  currentSavings: number; //現在の貯金額
   onSavingsGoalSubmit: (targetAmount: number) => void;
   loading?: boolean;
-  onError?: (error: string) => void;
 };
 
-export default function SavingsCard({ 
-  selectedMonth, 
-  currentSavingsGoal, 
-  currentSavings, 
+export default function SavingsCard({
+  selectedMonth,
+  currentSavingsGoal,
+  currentSavings,
   onSavingsGoalSubmit,
   loading = false,
-  onError
 }: SavingsCardProps) {
-  const [showSavingsGoalModal, setShowSavingsGoalModal] = useState(false);
-  const [newSavingsTarget, setNewSavingsTarget] = useState(DEFAULT_SAVINGS_TARGET);
+  const [showSavingsGoalModal, setShowSavingsGoalModal] = useState(false); //目標設定モーダルの開閉状態
+  const [newSavingsTarget, setNewSavingsTarget] = useState(
+    DEFAULT_SAVINGS_TARGET
+  ); //目標額の入力値更新
 
   const handleSubmit = () => {
-    const error = validateSavingsGoal(newSavingsTarget);
-    if (error) {
-      onError?.(error);
-      return;
-    }
-    
-    onSavingsGoalSubmit(newSavingsTarget);
-    setShowSavingsGoalModal(false);
+    onSavingsGoalSubmit(newSavingsTarget); //新しい目標額newSavingsTarget親コンポーネントへ
+    setShowSavingsGoalModal(false); //モーダルを閉じる
   };
 
   return (
     <>
-      <div className='bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6'>
-        <div className='flex items-center justify-between mb-4'>
-          <h2 className='text-gray-500 text-xs font-semibold'>月の貯金額</h2>
-          <div className='w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center'>
-            <span className='text-purple-500 text-lg'>💰</span>
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-gray-500 text-xs font-semibold">月の貯金額</h2>
+          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+            <span className="text-purple-500 text-lg">💰</span>
           </div>
         </div>
-        
-        <div className='text-xl font-bold text-purple-500 mb-1'>
-          {currentSavings.toLocaleString()}
-          <span className='text-sm ml-1'>円</span>
+        {currentSavings.toLocaleString()}
+        {/* 親から渡された現在の貯金額をtoLocaleStringで桁区切りに */}
+        <div className="text-xl font-bold text-purple-500 mb-1">
+          <span className="text-sm ml-1">円</span>
         </div>
-        
-        {currentSavingsGoal ? (
+
+        {currentSavingsGoal ? ( //目標が設定されている場合
           <>
-            <div className='text-gray-400 text-xs mb-4'>
+            <div className="text-gray-400 text-xs mb-4">
               目標金額 : {currentSavingsGoal.targetAmount.toLocaleString()}
             </div>
-            
-            {/* Progress bar */}
-            <div className='bg-gray-100 rounded-full p-1 mb-4'>
-              <div className='bg-gradient-to-r from-purple-500 to-purple-400 h-5 rounded-full flex items-center justify-center relative overflow-hidden'>
-                <div 
-                  className='bg-purple-600 absolute left-0 top-0 h-full transition-all duration-500'
-                  style={{ 
-                    width: `${Math.min((currentSavings / currentSavingsGoal.targetAmount) * 100, 100)}%` 
+
+            {/* Prxress bar */}
+            <div className="bg-gray-100 rounded-full p-1 mb-4">
+              <div className="bg-gradient-to-r from-purple-500 to-purple-400 h-5 rounded-full flex items-center justify-center relative overflow-hidden">
+                <div
+                  className="bg-purple-600 absolute left-0 top-0 h-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min(
+                      (currentSavings / currentSavingsGoal.targetAmount) * 100,
+                      100
+                    )}%`,
                   }}
                 ></div>
-                <span className='text-white text-xs font-medium relative z-10'>
-                  {Math.round((currentSavings / currentSavingsGoal.targetAmount) * 100)}%
+                <span className="text-white text-xs font-medium relative z-10">
+                  {Math.round(
+                    (currentSavings / currentSavingsGoal.targetAmount) * 100
+                  )}
+                  %
                 </span>
               </div>
             </div>
-            
-            <button 
+            <button
               onClick={() => setShowSavingsGoalModal(true)}
-              className='text-gray-400 text-xs'
+              className="text-gray-400 text-xs"
             >
               目標を変更
             </button>
           </>
         ) : (
-          <button 
+          <button //目標が設定されていない場合
             onClick={() => setShowSavingsGoalModal(true)}
-            className='bg-gray-100 text-gray-600 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors'
+            className="bg-gray-100 text-gray-600 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
           >
             目標を設定
           </button>
         )}
       </div>
 
-      {/* Savings Goal Modal */}
-      {showSavingsGoalModal && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50'>
-          <div className='bg-white rounded-2xl p-6 w-full max-w-sm'>
-            <h3 className='text-lg font-bold text-black mb-4'>貯金目標を設定</h3>
-            <div className='space-y-4'>
+      {showSavingsGoalModal && ( //showSavingsGoalModal が true の場合のみ表示
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-black mb-4">
+              貯金目標を設定
+            </h3>
+            <div className="space-y-4">
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {getMonthName(selectedMonth)}の目標貯金額
                 </label>
                 <input
-                  type='number'
+                  type="number"
                   value={newSavingsTarget}
                   onChange={(e) => setNewSavingsTarget(Number(e.target.value))}
-                  className='w-full border border-gray-200 p-3 rounded-lg text-sm'
-                  placeholder='目標金額を入力'
+                  className="w-full border border-gray-200 p-3 rounded-lg text-sm"
+                  placeholder="目標金額を入力"
                   min={0}
                 />
               </div>
-              <div className='text-sm text-gray-500'>
-                現在の貯金可能額: {currentSavings.toLocaleString()}円
+              <div className="text-sm text-gray-500">
+                現在の貯金額: {currentSavings.toLocaleString()}円
               </div>
-              <div className='flex gap-3'>
+              <div className="flex gap-3">
                 <button
-                  onClick={() => setShowSavingsGoalModal(false)}
-                  className='flex-1 border border-gray-200 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-50 transition-colors'
+                  onClick={() => setShowSavingsGoalModal(false)} //モーダルを閉じる
+                  className="flex-1 border border-gray-200 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   キャンセル
                 </button>
@@ -121,11 +122,11 @@ export default function SavingsCard({
                   disabled={loading}
                   className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
                     loading
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-purple-500 hover:bg-purple-600'
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-purple-500 hover:bg-purple-600"
                   } text-white`}
                 >
-                  {loading ? '設定中...' : '設定'}
+                  {loading ? "設定中..." : "設定"}
                 </button>
               </div>
             </div>

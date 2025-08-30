@@ -1,32 +1,16 @@
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import type { Expense, Savings } from '../types';
-import { getMonthName, filterExpensesByMonth, filterSavingsByMonth, calculateTotal } from '../utils';
 
-type ExpenseChartProps = {
-  expenses: Expense[];
-  savings: Savings[];
+type ChartData = {
+  month: string;
+  expenses: number;
+  savings: number;
 };
 
-export default function ExpenseChart({ expenses, savings }: ExpenseChartProps) {
-  const getChartData = () => {
-    const data = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthString = date.toISOString().slice(0, 7);
-      const monthExpenses = filterExpensesByMonth(expenses, monthString);
-      const monthSavings = filterSavingsByMonth(savings, monthString);
-      const expenseTotal = calculateTotal(monthExpenses);
-      const savingTotal = calculateTotal(monthSavings);
-      
-      data.push({
-        month: getMonthName(monthString),
-        expenses: expenseTotal,
-        savings: savingTotal,
-      });
-    }
-    return data;
-  };
+type ExpenseChartProps = {
+  chartData: ChartData[]; //utilで今の月と6月前のまでのデータ支出、貯金取得
+};
+
+export default function ExpenseChart({ chartData }: ExpenseChartProps) {
 
   return (
     <div className='bg-white rounded-lg p-4 mb-6 shadow-sm border border-gray-200'>
@@ -43,26 +27,26 @@ export default function ExpenseChart({ expenses, savings }: ExpenseChartProps) {
       </div>
       <div className='h-24'>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={getChartData()}>
-            <XAxis 
-              dataKey="month" 
-              axisLine={false} 
-              tickLine={false} 
+          <LineChart data={chartData}>
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
               tick={{ fontSize: 10, fill: '#9CA3AF' }}
             />
             <YAxis hide />
-            <Line 
-              type="monotone" 
-              dataKey="expenses" 
-              stroke="#8B5CF6" 
+            <Line
+              type="monotone"
+              dataKey="expenses"
+              stroke="#8B5CF6"
               strokeWidth={2}
               dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 3 }}
               activeDot={{ r: 4, fill: '#8B5CF6' }}
             />
-            <Line 
-              type="monotone" 
-              dataKey="savings" 
-              stroke="#10B981" 
+            <Line
+              type="monotone"
+              dataKey="savings"
+              stroke="#10B981"
               strokeWidth={2}
               dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
               activeDot={{ r: 4, fill: '#10B981' }}
