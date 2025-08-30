@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app"
-import { getFirestore } from "firebase/firestore"  //firestoreを使えるようにimport
+import { getFirestore } from "firebase/firestore"  //firestoreをimport
 
 const firebaseConfig = { //envファイルでapiキーは一括管理
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,

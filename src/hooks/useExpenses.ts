@@ -12,10 +12,10 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Expense, Savings, SavingsGoal } from '../types';
-import { 
-  filterExpensesByMonth, 
-  filterSavingsByMonth, 
-  getPreviousMonth, 
+import {
+  filterExpensesByMonth,
+  filterSavingsByMonth,
+  getPreviousMonth,
   getMonthName,
   calculateTotal,
   calculatePreviousMonthComparison,

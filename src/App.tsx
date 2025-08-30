@@ -1,22 +1,22 @@
 import { useState } from "react";
-import { useExpenses } from "./hooks/useExpenses";
-import { categories } from "./constants/categories";
-import { getCurrentMonth } from "./utils";
+import { useExpenses } from "./hooks/useExpenses"; //カスタムフック
+import { categories } from "./constants/categories"; //カテゴリー定義
+import { getCurrentMonth } from "./utils"; //今月の文字列（例: "2023-05"）を取得
 
 // Components
-import ErrorMessage from "./components/ErrorMessage";
-import MonthSelector from "./components/MonthSelector";
+import ErrorMessage from "./components/ErrorMessage"; //エラーメッセージ
+import MonthSelector from "./components/MonthSelector"; //月選択セレクター
 import ExpenseChart from "./components/ExpenseChart";
-import CategorySpendingCard from "./components/CategorySpendingCard";
+import CategorySpendingCard from "./components/CategorySpendingCard"; // カテゴリ別支出表示部品
 import SavingsCard from "./components/SavingsCard";
-import RecentTransactions from "./components/RecentTransactions";
+import RecentTransactions from "./components/RecentTransactions"; // 貯金目標表示部品
 import RecentSavings from "./components/RecentSavings";
-import ExpenseForm from "./components/ExpenseForm";
-import SavingsForm from "./components/SavingsForm";
+import AddButton from "./components/add/AddButton";
+import AddModal from "./components/add/AddModal";
 
 function App() {
-  // UI state
-  const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth());
+  const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth()); //
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
 
   // Unified data operations via custom hook
   const {
@@ -98,16 +98,15 @@ function App() {
           onDeleteSavings={deleteSavings}
         />
 
-        {/* Add new expense form */}
-        <ExpenseForm
+        {/* Fixed add button */}
+        <AddButton onClick={() => setIsAddModalOpen(true)} />
+
+        {/* Add modal */}
+        <AddModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
           categories={categories}
           onAddExpense={addExpense}
-          loading={loading}
-          onError={setError}
-        />
-
-        {/* Add new savings form */}
-        <SavingsForm
           onAddSavings={addSavings}
           loading={loading}
           onError={setError}
