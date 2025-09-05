@@ -12,4 +12,4 @@ const firebaseConfig = { //envファイルでapiキーは一括管理
 };
 
 const app = initializeApp(firebaseConfig) //firebaseConfigのapiキーを使ってfirebaseに接続
-export const db = getFirestore(app) //firestoreをexport(dbという関数で他のファイルでもfirestoreを使えるように)
+export const db = getFirestore(app) //firestoreをexportdbという関数で他のファイルでもfirestoreを使えるように)
