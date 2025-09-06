@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useFormState } from '../../hooks/useFormState';
 import type { Category } from '../../types';
+import { INPUT_BASE_STYLE, CATEGORY_BUTTON_SELECTED, CATEGORY_BUTTON_UNSELECTED } from '../../constants/styles';
+import FormInput from '../common/FormInput';
+import SubmitButton from '../common/SubmitButton';
 
 type ExpenseFormProps = {
   categories: Category[];
@@ -8,37 +11,34 @@ type ExpenseFormProps = {
 };
 
 export default function ExpenseForm({ categories, onAddExpense, loading = false }: ExpenseFormProps) {
-  const [amount, setAmount] = useState<number>(0);
-  const [memo, setMemo] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>('other');
+  const { values, updateValue, handleSubmit } = useFormState({
+    amount: 0,
+    memo: '',
+    selectedCategory: 'other'
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    await onAddExpense(amount, memo, selectedCategory);
-    setAmount(0);
-    setMemo("");
-    setSelectedCategory('other');
-  };
+  const onSubmit = handleSubmit(async (formValues) => {
+    await onAddExpense(formValues.amount, formValues.memo, formValues.selectedCategory);
+  });
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-4'>
+    <form onSubmit={onSubmit} className='space-y-4'>
       <div>
-        <input
+        <FormInput
           type='number'
-          value={amount || ''}
-          onChange={(e) => setAmount(Number(e.target.value))}
-          className='w-full border border-gray-200 p-3 rounded-lg text-sm'
+          value={values.amount}
+          onChange={(value) => updateValue('amount', value)}
+          className={INPUT_BASE_STYLE}
           placeholder='金額を入力'
           min={0}
         />
       </div>
       <div>
-        <input
+        <FormInput
           type='text'
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          className='w-full border border-gray-200 p-3 rounded-lg text-sm'
+          value={values.memo}
+          onChange={(value) => updateValue('memo', value)}
+          className={INPUT_BASE_STYLE}
           placeholder='メモを入力'
         />
       </div>
@@ -51,11 +51,11 @@ export default function ExpenseForm({ categories, onAddExpense, loading = false 
             <button
               key={category.id}
               type='button'
-              onClick={() => setSelectedCategory(category.id)}
+              onClick={() => updateValue('selectedCategory', category.id)}
               className={`p-3 rounded-lg border text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
-                selectedCategory === category.id
-                  ? `${category.color} text-white border-transparent`
-                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                values.selectedCategory === category.id
+                  ? `${category.color} ${CATEGORY_BUTTON_SELECTED}`
+                  : CATEGORY_BUTTON_UNSELECTED
               }`}
             >
               <span className='text-lg'>{category.icon}</span>
@@ -65,17 +65,13 @@ export default function ExpenseForm({ categories, onAddExpense, loading = false 
         </div>
       </div>
       
-      <button 
-        type='submit'
-        disabled={loading}
-        className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-          loading
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-purple-500 hover:bg-purple-600'
-        } text-white`}
-      >
-        {loading ? '追加中...' : '追加'}
-      </button>
+      <SubmitButton
+        loading={loading}
+        loadingText='追加中...'
+        normalText='追加'
+        bgColor='bg-purple-500'
+        hoverColor='hover:bg-purple-600'
+      />
     </form>
   );
 }

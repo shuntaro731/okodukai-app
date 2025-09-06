@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useFormState } from '../../hooks/useFormState';
+import { INPUT_GREEN_STYLE } from '../../constants/styles';
+import FormInput from '../common/FormInput';
+import SubmitButton from '../common/SubmitButton';
 
 type SavingsFormProps = {
   onAddSavings: (amount: number, memo: string) => Promise<void>;
@@ -6,49 +9,44 @@ type SavingsFormProps = {
 };
 
 export default function SavingsForm({ onAddSavings, loading = false }: SavingsFormProps) {
-  const [savingsAmount, setSavingsAmount] = useState<number>(0); //貯金額の入力値を保持
-  const [savingsMemo, setSavingsMemo] = useState<string>(""); //メモの入力値を保持
+  const { values, updateValue, handleSubmit } = useFormState({
+    savingsAmount: 0,
+    savingsMemo: ''
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); //contactformでもやったブラウザのデフォルトのフォーム送信動作を防ぐやつ
-    await onAddSavings(savingsAmount, savingsMemo); //親コンポーネントにデータを渡す
-    setSavingsAmount(0); //フォームリセット
-    setSavingsMemo("");
-  };
+  const onSubmit = handleSubmit(async (formValues) => {
+    await onAddSavings(formValues.savingsAmount, formValues.savingsMemo);
+  });
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-4'>
+    <form onSubmit={onSubmit} className='space-y-4'>
       <div>
-        <input
+        <FormInput
           type='number'
-          value={savingsAmount || ''}
-          onChange={(e) => setSavingsAmount(Number(e.target.value))}
-          className='w-full border border-green-200 p-3 rounded-lg text-sm focus:border-green-400 focus:ring-1 focus:ring-green-400'
+          value={values.savingsAmount}
+          onChange={(value) => updateValue('savingsAmount', value)}
+          className={INPUT_GREEN_STYLE}
           placeholder='貯金額を入力'
           min={0}
         />
       </div>
       <div>
-        <input
+        <FormInput
           type='text'
-          value={savingsMemo}
-          onChange={(e) => setSavingsMemo(e.target.value)}
-          className='w-full border border-green-200 p-3 rounded-lg text-sm focus:border-green-400 focus:ring-1 focus:ring-green-400'
+          value={values.savingsMemo}
+          onChange={(value) => updateValue('savingsMemo', value)}
+          className={INPUT_GREEN_STYLE}
           placeholder='メモを入力'
         />
       </div>
       
-      <button 
-        type='submit'
-        disabled={loading}
-        className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-          loading
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-green-500 hover:bg-green-600'
-        } text-white`}
-      >
-        {loading ? '追加中...' : '貯金を追加'}
-      </button>
+      <SubmitButton
+        loading={loading}
+        loadingText='追加中...'
+        normalText='貯金を追加'
+        bgColor='bg-green-500'
+        hoverColor='hover:bg-green-600'
+      />
     </form>
   );
 }

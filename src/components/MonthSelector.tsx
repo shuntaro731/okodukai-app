@@ -14,15 +14,8 @@ export default function MonthSelector({
     return parseInt(selectedMonth.split("-")[0]) || new Date().getFullYear();
   });
 
-  const generateMonths = (year: number) => {
-    return Array.from({ length: 12 }, (_, i) => {
-      const month = (i + 1).toString().padStart(2, "0");
-      return `${year}-${month}`; 
-    });
-  };
-
-  const months = generateMonths(currentYear);
-  const currentDate = new Date();//現在の日付
+  const months = Array.from({ length: 12 }, (_, i) => `${currentYear}-${(i + 1).toString().padStart(2, '0')}`);
+  const currentDate = new Date();
   const maxYear = currentDate.getFullYear() + 5; //今の年から5年先まで選択可
   const minYear = 2020; 
 

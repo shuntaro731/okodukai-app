@@ -14,8 +14,8 @@ import AddButton from "./components/add/AddButton";
 import AddModal from "./components/add/AddModal";
 
 function App() {
-  const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth()); //現在選択されている月を再レンダリングして取得
-  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false); //支出追加ボタンのモーダルの開閉状態を取得(booleanなのでtrueかfalse)
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth()); //現在選択されている月を再レンダリングして取得
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false); //支出追加ボタンのモーダルの開閉状態を取得(booleanなのでtrueかfalse)
 
   const {
     addExpense,
@@ -29,7 +29,7 @@ function App() {
     totalExpenses,
     currentSavings,
     previousMonthComparison,
-    getChartData,
+    chartData,
     //目標値データ
     currentSavingsGoal,
     handleSavingsGoalSubmit,
@@ -55,12 +55,12 @@ function App() {
             {/*differenceで差分の数値を割り出し正なのか負なのかを判別して正の時は+負の時は-を返す*/}
             先月比: {previousMonthComparison.difference > 0 ? "+" : "-"}
             {/* toLocaleStringによって桁区切りを入れた文字列に変換 */}
-            {previousMonthComparison.difference.toLocaleString()} 円
+            {Math.abs(previousMonthComparison.difference).toLocaleString()} 円
           </div>
         </div>
 
         {/* useExpenses から取得したチャートデータを渡してグラフ表示*/}
-        <ExpenseChart chartData={getChartData()} />
+        <ExpenseChart chartData={chartData} />
 
         {/*選択月の支出データとカテゴリ定義を渡して、カテゴリごとの支出額を表示*/}
         <CategorySpendingCard
@@ -68,7 +68,6 @@ function App() {
           categories={categories}
         />
 
-        {/*貯金目標*/}
         <SavingsCard
           selectedMonth={selectedMonth}
           currentSavingsGoal={currentSavingsGoal} //現在の貯金目標額
@@ -77,14 +76,12 @@ function App() {
           loading={loading}
         />
 
-        {/*選択月の支出データとカテゴリ定義を渡して、カテゴリごとの支出額を表示*/}
         <RecentTransactions
           expenses={currentMonthExpenses}
           categories={categories}
           onDeleteExpense={deleteExpense}
         />
 
-        {/* Recent savings card */}
         <RecentSavings
           savings={currentMonthSavings}
           savingsTotal={currentSavings}
@@ -94,7 +91,6 @@ function App() {
         {/* onClickが実行されるとsetIsAddModalOpen(true) によってモーダルを開く状態に */}
         <AddButton onClick={() => setIsAddModalOpen(true)} />
 
-        {/* Add modal */}
         <AddModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)} // モーダル内の閉じるボタンや背景クリック時に実行、isAddModalOpenをfalse に設定してモーダルを閉じる

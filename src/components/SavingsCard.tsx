@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { SavingsGoal } from "../types";
-import { getMonthName } from "../utils";
+import { getMonthName, calculateSavingsProgress } from "../utils";
 import { DEFAULT_SAVINGS_TARGET } from "../constants/categories";
 
 type SavingsCardProps = {
@@ -50,26 +50,24 @@ export default function SavingsCard({
               目標金額 : {currentSavingsGoal.targetAmount.toLocaleString()}
             </div>
 
-            {/* Prxress bar */}
-            <div className="bg-gray-100 rounded-full p-1 mb-4">
-              <div className="bg-gradient-to-r from-purple-500 to-purple-400 h-5 rounded-full flex items-center justify-center relative overflow-hidden">
-                <div
-                  className="bg-purple-600 absolute left-0 top-0 h-full transition-all duration-500"
-                  style={{
-                    width: `${Math.min(
-                      (currentSavings / currentSavingsGoal.targetAmount) * 100,
-                      100
-                    )}%`,
-                  }}
-                ></div>
-                <span className="text-white text-xs font-medium relative z-10">
-                  {Math.round(
-                    (currentSavings / currentSavingsGoal.targetAmount) * 100
-                  )}
-                  %
-                </span>
-              </div>
-            </div>
+            {/* Progress bar */}
+            {(() => {
+              const progress = calculateSavingsProgress(currentSavings, currentSavingsGoal.targetAmount);
+              return (
+                <div className="bg-gray-100 rounded-full p-1 mb-4">
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-400 h-5 rounded-full flex items-center justify-center relative overflow-hidden">
+                    <div
+                      className="bg-purple-600 absolute left-0 top-0 h-full transition-all duration-500"
+                      style={{ width: progress.progressWidth }}
+                    ></div>
+                    <span className="text-white text-xs font-medium relative z-10">
+                      {progress.percentage}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })()
+            }
             <button
               onClick={() => setShowSavingsGoalModal(true)}
               className="text-gray-400 text-xs"
