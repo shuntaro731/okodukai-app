@@ -1,102 +1,111 @@
 import { useState } from "react";
-import { useExpenses } from "./hooks/useExpenses"; //カスタムフック
-import { categories } from "./constants/categories"; //カテゴリー定義
-import { getCurrentMonth } from "./utils"; //現在の月を取得
+import { useExpenses } from "./hooks/useExpenses";
+import { categories } from "./constants/categories";
+import { getCurrentMonth } from "./utils";
+import { IconChevronLeft, IconChevronRight, IconPlus } from "@tabler/icons-react";
 
 // Components
-import MonthSelector from "./components/MonthSelector";
-import ExpenseChart from "./components/ExpenseChart";
 import CategorySpendingCard from "./components/CategorySpendingCard";
-import SavingsCard from "./components/SavingsCard";
-import RecentTransactions from "./components/RecentTransactions"; // 貯金目標表示部品
-import RecentSavings from "./components/RecentSavings"; //貯金履歴
-import AddButton from "./components/add/AddButton";
-import AddModal from "./components/add/AddModal";
+import RecentTransactions from "./components/RecentTransactions";
+import AddExpenseModal from "./components/AddExpenseModal";
+import ExpenseDonutChart from "./components/ExpenseDonutChart";
 
 function App() {
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth()); //現在選択されている月を再レンダリングして取得
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false); //支出追加ボタンのモーダルの開閉状態を取得(booleanなのでtrueかfalse)
+  // 選択されている月（YYYY-MM形式）
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  // 支出追加モーダルの開閉状態
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // カスタムフックで支出データを管理
   const {
     addExpense,
     deleteExpense,
-    addSavings,
-    deleteSavings,
     loading,
-    //月毎のデータ
     currentMonthExpenses,
-    currentMonthSavings,
-    totalExpenses,
-    currentSavings,
-    previousMonthComparison,
-    chartData,
-    //目標値データ
-    currentSavingsGoal,
-    handleSavingsGoalSubmit,
-  } = useExpenses(selectedMonth); //useExpensesフックに selectedMonth を渡すことで、選択選択している月に紐づいてデータを取得
+  } = useExpenses(selectedMonth);
+
+  // 前月に移動
+  const handlePreviousMonth = () => {
+    const date = new Date(selectedMonth + '-01');
+    date.setMonth(date.getMonth() - 1);
+    setSelectedMonth(date.toISOString().slice(0, 7));
+  };
+
+  // 次月に移動
+  const handleNextMonth = () => {
+    const date = new Date(selectedMonth + '-01');
+    date.setMonth(date.getMonth() + 1);
+    setSelectedMonth(date.toISOString().slice(0, 7));
+  };
+
+  // 月を表示用の文字列に変換（例: "2025-01" → "2025年1月"）
+  const displayMonth = () => {
+    const date = new Date(selectedMonth + '-01');
+    return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+  };
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-white pb-6">
       <div className="w-full max-w-md mx-auto">
-        <div className="text-center mb-14">
-          {/* App.tsxで必要なデータをプロップスで子コンポーネント送る */}
-          <MonthSelector
-            selectedMonth={selectedMonth} //選択している月
-            onMonthChange={setSelectedMonth} //月の選択が変わるとonMonthChangeプロップスを通じてsetSelectedMonth関数を呼び出し更新
-          />
-
-          <div className="text-4xl font-bold text-black mb-1">
-            {/* 選択月の合計支出額を表示 */}
-            {totalExpenses.toLocaleString()}
-            <span className="text-2xl ml-1">円</span>
-          </div>
-
-          <div className="text-gray-500 text-sm">
-            {/*differenceで差分の数値を割り出し正なのか負なのかを判別して正の時は+負の時は-を返す*/}
-            先月比: {previousMonthComparison.difference > 0 ? "+" : "-"}
-            {/* toLocaleStringによって桁区切りを入れた文字列に変換 */}
-            {Math.abs(previousMonthComparison.difference).toLocaleString()} 円
-          </div>
+        {/* ヘッダー */}
+        <div className="flex items-center justify-between px-4 pt-6 pb-4">
+          <h1 className="text-xl font-bold text-black">お小遣い帳</h1>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="w-11 h-11 bg-blue-500 rounded-xl flex items-center justify-center text-white hover:bg-blue-600 transition-colors"
+          >
+            <IconPlus size={24} stroke={2.5} />
+          </button>
         </div>
 
-        {/* useExpenses から取得したチャートデータを渡してグラフ表示*/}
-        <ExpenseChart chartData={chartData} />
+        <div className="px-4">
+          {/* 月選択 */}
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <button
+              onClick={handlePreviousMonth}
+              className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <IconChevronLeft size={20} stroke={2} />
+            </button>
+            <div className="text-lg font-semibold text-black min-w-[140px] text-center">
+              {displayMonth()}
+            </div>
+            <button
+              onClick={handleNextMonth}
+              className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <IconChevronRight size={20} stroke={2} />
+            </button>
+          </div>
 
-        {/*選択月の支出データとカテゴリ定義を渡して、カテゴリごとの支出額を表示*/}
-        <CategorySpendingCard
-          expenses={currentMonthExpenses} //
-          categories={categories}
-        />
+          {/* 今月の総支出額 - 円グラフ */}
+          <ExpenseDonutChart
+            expenses={currentMonthExpenses}
+            categories={categories}
+          />
+        </div>
 
-        <SavingsCard
-          selectedMonth={selectedMonth}
-          currentSavingsGoal={currentSavingsGoal} //現在の貯金目標額
-          currentSavings={currentSavings} //月毎の貯金総額
-          onSavingsGoalSubmit={handleSavingsGoalSubmit} //貯金目標を更新した際に呼び出す関数
-          loading={loading}
-        />
+        <div className="px-4 space-y-4">
+          {/* カテゴリ別支出カード */}
+          <CategorySpendingCard
+            expenses={currentMonthExpenses}
+            categories={categories}
+          />
 
-        <RecentTransactions
-          expenses={currentMonthExpenses}
-          categories={categories}
-          onDeleteExpense={deleteExpense}
-        />
+          {/* 最近の支出履歴 */}
+          <RecentTransactions
+            expenses={currentMonthExpenses}
+            categories={categories}
+            onDeleteExpense={deleteExpense}
+          />
+        </div>
 
-        <RecentSavings
-          savings={currentMonthSavings}
-          savingsTotal={currentSavings}
-          onDeleteSavings={deleteSavings}
-        />
-
-        {/* onClickが実行されるとsetIsAddModalOpen(true) によってモーダルを開く状態に */}
-        <AddButton onClick={() => setIsAddModalOpen(true)} />
-
-        <AddModal
+        {/* 支出追加モーダル */}
+        <AddExpenseModal
           isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)} // モーダル内の閉じるボタンや背景クリック時に実行、isAddModalOpenをfalse に設定してモーダルを閉じる
-          categories={categories} //支出カテゴリの選択肢として categoriesデータを渡す
-          onAddExpense={addExpense} //支出データが入力・送信された際に、支出を追加
-          onAddSavings={addSavings} //貯金データが入力・送信された際に、貯金を追加
+          onClose={() => setIsAddModalOpen(false)}
+          categories={categories}
+          onAddExpense={addExpense}
           loading={loading}
         />
       </div>

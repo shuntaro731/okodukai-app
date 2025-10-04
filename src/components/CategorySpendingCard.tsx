@@ -1,6 +1,7 @@
 import type { Category, Expense } from '../types';
 import { MONTHLY_BUDGET } from '../constants/categories';
 import { calculateTotal, getCategoryTotals } from '../utils';
+import { IconChartPie } from '@tabler/icons-react';
 
 type CategorySpendingCardProps = {
   expenses: Expense[];
@@ -17,38 +18,31 @@ export default function CategorySpendingCard({ expenses, categories }: CategoryS
   }
 
   return (
-    <div className='bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6'>
-      <div className='flex items-center justify-between mb-4'>
-        <h2 className='text-gray-500 text-sm font-semibold'>カテゴリごとの支出</h2>
-        <div className='w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center'>
-          <span className='text-purple-500 text-lg'>📊</span>
+    <div className='bg-white rounded-2xl p-5'>
+      <div className='flex items-center justify-between mb-5'>
+        <h2 className='text-gray-500 text-sm font-medium'>カテゴリごとの支出</h2>
+        <div className='w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center'>
+          <IconChartPie size={20} stroke={2} className='text-purple-600' />
         </div>
       </div>
-      
-      <div className='text-2xl font-bold text-black mb-2'>
+
+      <div className='text-3xl font-bold text-black mb-1'>
         {total.toLocaleString()}
-        <span className='text-sm ml-1'>円</span>
+        <span className='text-lg ml-1 font-normal'>円</span>
       </div>
-      <div className='text-gray-400 text-sm mb-4'>/{MONTHLY_BUDGET.toLocaleString()}</div>
-      
-      <div className='space-y-3'>
+      <div className='text-gray-300 text-sm mb-5'>/{MONTHLY_BUDGET.toLocaleString()}</div>
+
+      <div className='space-y-4'>
         {categoryTotals.slice(0, 3).map((categoryData) => {
-          const percentage = Math.min((categoryData.total / total) * 100, 100);
           return (
-            <div key={categoryData.id} className='flex items-center gap-3'>
-              <div className={`w-4 h-4 ${categoryData.color} rounded`}></div>
-              <div className='flex-1 min-w-0'>
-                <div className='text-black text-sm font-semibold'>{categoryData.name}</div>
-                <div className='w-full bg-gray-200 rounded-full h-1 mt-1'>
-                  <div 
-                    className={`${categoryData.color} h-1 rounded-full transition-all duration-300`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
+            <div key={categoryData.id} className='flex items-center justify-between'>
+              <div className='flex items-center gap-3'>
+                <div className={`w-2 h-2 ${categoryData.color} rounded-full`}></div>
+                <span className='text-sm text-gray-700'>{categoryData.name}</span>
               </div>
-              <div className='text-black text-sm font-semibold'>
+              <div className='text-base font-semibold text-black'>
                 {categoryData.total.toLocaleString()}
-                <span className='text-xs'>円</span>
+                <span className='text-xs font-normal text-gray-400 ml-0.5'>円</span>
               </div>
             </div>
           );
